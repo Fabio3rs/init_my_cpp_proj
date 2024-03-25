@@ -13,7 +13,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build_clang:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
@@ -38,3 +38,24 @@ jobs:
         ./testproj
         ctest
         
+  build_gcc:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run code
+      run: |
+        sudo apt install ninja-build -y
+        export CC=$(which clang-15)
+        export CXX=$(which clang++-15)
+        chmod +x initcpp.sh
+        sudo cp initcpp.sh /usr/local/bin/initcpp
+        sudo initcpp -i
+        initcpp testproj
+
+        cd testproj/build
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug ..
+        ninja
+        ./testproj
+        ctest
