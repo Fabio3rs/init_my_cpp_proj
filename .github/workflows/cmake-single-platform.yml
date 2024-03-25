@@ -24,6 +24,9 @@ jobs:
 
     - name: Run code
       run: |
+        sudo apt install clang-15 clang-tidy-15 clang-format ninja-build -y
+        export CC=$(which clang-15)
+        export CXX=$(which clang++-15)
         chmod +x initcpp.sh
         sudo cp initcpp.sh /usr/local/bin/initcpp
         sudo initcpp -i
