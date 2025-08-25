@@ -440,6 +440,10 @@ TEST(SampleTest, Test1) {
 }
 EOF
 
+# Configure git identity for the initial commit (placeholder values for CI environments)
+git config user.email "initcpp@example.com"
+git config user.name "InitCpp Script"
+
 git add .
 git commit -m "Initial project setup with CMake and modern C++ configuration"
 
