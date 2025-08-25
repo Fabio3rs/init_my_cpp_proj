@@ -8,10 +8,13 @@ When starting a new C++ project, certain tasks are repetitive and time-consuming
 As someone who regularly studies C++ and creates new projects, I understand the importance of being able to focus on the code rather than the project structure. That is why I created this script to automate the process of creating a new project.
 
 ### Features
-- Create a project directory structure
-- Generate CMakeLists.txt file
-- By default sanitize and enable warnings in the CMakeLists.txt file
-- Add a sample test file
+- **🏗️ Automated Project Setup**: Create complete C++ project directory structure
+- **⚙️ Modern CMake Configuration**: Generate optimized CMakeLists.txt with best practices
+- **🛡️ Security & Quality**: Enable sanitizers and comprehensive warning flags by default
+- **✅ Testing Ready**: Automatic GTest integration when available
+- **🔧 Configurable**: Support for different C++ standards and custom project paths
+- **🌐 Cross-Platform**: Support for multiple Linux package managers (apt, dnf, pacman)
+- **📋 Modern Git Integration**: Initialize with main branch and proper .gitignore
 
 Enabling sanitizers and warning flags in C++ offers significant benefits. Sanitizers detect common errors reducing security vulnerabilities. Warning flags promote best practices and code quality. By incorporating these tools, developers can enhance the security, reliability, and maintainability of their C++ codebases.
 Since sanitizers run at runtime, it is essential to have automated tests in the codebase.
@@ -49,8 +52,66 @@ cp initcpp.sh ~/.local/bin/initcpp
 ```
 
 ### Usage
-To create a new C++ project, run the script with the project name as an argument. The script will create a new directory with the project name and set up the project structure and files.
+Create a new C++ project with the project name as an argument:
 
 ```bash
 initcpp <project-name>
 ```
+
+#### Command Line Options
+
+- `-h`: Display help message with usage examples
+- `-c <standard>`: Set C++ standard version (11, 14, 17, 20, 23) - default is 20
+- `-p <path>`: Custom directory path for the project
+- `-i`: Install required dependencies (cmake, git, ninja, gtest)
+- `-f`: Force script to continue even on errors
+- `-d`: Enable debug mode with verbose output
+
+#### Examples
+
+```bash
+# Create project with default settings (C++20)
+initcpp my_awesome_project
+
+# Create project with C++17 standard
+initcpp -c 17 legacy_project
+
+# Create project in custom directory
+initcpp -p /home/user/projects/my_project awesome_project
+
+# Install dependencies first, then create project
+initcpp -i
+initcpp my_project
+
+# Create project with debug output
+initcpp -d debug_project
+```
+
+#### Project Structure
+
+The script creates the following structure:
+```
+my_project/
+├── CMakeLists.txt          # Main build configuration
+├── .gitignore              # Git ignore patterns
+├── include/
+│   └── common.hpp          # Common headers
+├── src/
+│   ├── main.cpp           # Application entry point
+│   └── lib.cpp            # Library implementation
+├── tests/
+│   ├── CMakeLists.txt     # Test configuration
+│   └── test.cpp           # Sample tests (if GTest available)
+└── build/                 # Build directory (configured)
+```
+
+### What's New
+
+Recent improvements include:
+- **🔧 Enhanced CLI**: Better command-line parsing with C++ standard selection
+- **🛠️ Cross-Platform**: Support for multiple Linux distributions (Ubuntu/Debian, Fedora/RHEL, Arch Linux)
+- **🏗️ Robust Build**: Improved CMake configuration with better error handling
+- **📚 Better Documentation**: Comprehensive README with examples and project structure
+- **🧪 Smart Testing**: Automatic GTest detection with graceful fallback
+- **🎯 Modern Practices**: Main branch initialization and organized sanitizer flags
+- **⚡ Better UX**: Clear success messages and next-step instructions
