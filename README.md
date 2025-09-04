@@ -10,6 +10,7 @@ As someone who regularly studies C++ and creates new projects, I understand the 
 ### Features
 - **🏗️ Automated Project Setup**: Create complete C++ project directory structure
 - **⚙️ Modern CMake Configuration**: Generate optimized CMakeLists.txt with best practices
+- **⚡ Precompiled Headers**: Automatic PCH setup for faster compilation (CMake 3.16+)
 - **🛡️ Security & Quality**: Enable sanitizers and comprehensive warning flags by default
 - **✅ Testing Ready**: Automatic GTest integration when available
 - **🔧 Configurable**: Support for different C++ standards and custom project paths
@@ -27,6 +28,15 @@ Users are advised to review and understand the script's functionality before run
 By using this script, you agree to indemnify and hold harmless the author and contributors from any liability, damage, or loss arising from its use.
 
 ### Installation of the script
+
+#### System Requirements
+- **Linux Distribution**: Ubuntu/Debian, Fedora/RHEL, or Arch Linux
+- **CMake**: Version 3.12+ (3.16+ recommended for precompiled headers)
+- **Compiler**: GCC, Clang, or MSVC with C++11+ support
+- **Build System**: Ninja (preferred) or Make
+- **Optional**: GTest for unit testing
+
+#### Installation Steps
 1. Clone the repository
 ```bash
 git clone https://github.com/Fabio3rs/init_my_cpp_proj.git
@@ -61,9 +71,10 @@ initcpp <project-name>
 #### Command Line Options
 
 - `-h`: Display help message with usage examples
-- `-c <standard>`: Set C++ standard version (11, 14, 17, 20, 23) - default is 20
+- `-c <standard>`: Set C standard version (11, 99, etc.) - default is 11
+- `-x <standard>`: Set C++ standard version (11, 14, 17, 20, 23) - default is 20
 - `-p <path>`: Custom directory path for the project
-- `-i`: Install required dependencies (cmake, git, ninja, gtest)
+- `-i`: Install required dependencies (cmake, git, ninja, gtest) for your distribution
 - `-f`: Force script to continue even on errors
 - `-d`: Enable debug mode with verbose output
 
@@ -74,44 +85,75 @@ initcpp <project-name>
 initcpp my_awesome_project
 
 # Create project with C++17 standard
-initcpp -c 17 legacy_project
+initcpp -x 17 legacy_project
 
 # Create project in custom directory
 initcpp -p /home/user/projects/my_project awesome_project
 
-# Install dependencies first, then create project
+# Install dependencies first (auto-detects your distro)
 initcpp -i
-initcpp my_project
 
-# Create project with debug output
+# Create project with debug output (useful for troubleshooting)
 initcpp -d debug_project
+
+# Create project with custom C standard and directory
+initcpp -c 11 -x 23 -p ~/dev/modern_project future_project
 ```
+
+**Note**: Use `-x` for C++ standard and `-c` for C standard. Most users only need `-x`.
 
 #### Project Structure
 
 The script creates the following structure:
 ```
 my_project/
-├── CMakeLists.txt          # Main build configuration
+├── CMakeLists.txt          # Main build configuration with PCH support
 ├── .gitignore              # Git ignore patterns
 ├── include/
-│   └── common.hpp          # Common headers
+│   └── stdafx.hpp          # Precompiled header (faster compilation)
 ├── src/
 │   ├── main.cpp           # Application entry point
 │   └── lib.cpp            # Library implementation
 ├── tests/
 │   ├── CMakeLists.txt     # Test configuration
 │   └── test.cpp           # Sample tests (if GTest available)
-└── build/                 # Build directory (configured)
+└── build/                 # Build directory (auto-configured)
 ```
+
+### Building Your Project
+
+After creating your project, you can immediately build and run it:
+
+```bash
+# Navigate to your project
+cd my_project
+
+# Build the project (uses Ninja if available, otherwise Make)
+cmake --build build
+
+# Run the executable
+./build/my_project
+
+# Run tests (if GTest is available)
+cd build && ctest
+```
+
+The generated CMakeLists.txt includes:
+- **Modern C++ standards** (C++20 by default)
+- **Comprehensive compiler warnings** for better code quality
+- **Sanitizers** for runtime error detection (Debug builds)
+- **Precompiled headers** for faster compilation
+- **Automatic test discovery** with GTest integration
 
 ### What's New
 
 Recent improvements include:
+- **⚡ Precompiled Headers**: Modern CMake PCH configuration for faster compilation
 - **🔧 Enhanced CLI**: Better command-line parsing with C++ standard selection
 - **🛠️ Cross-Platform**: Support for multiple Linux distributions (Ubuntu/Debian, Fedora/RHEL, Arch Linux)
 - **🏗️ Robust Build**: Improved CMake configuration with better error handling
 - **📚 Better Documentation**: Comprehensive README with examples and project structure
 - **🧪 Smart Testing**: Automatic GTest detection with graceful fallback
+- **✅ Project Validation**: Enhanced project name validation with helpful warnings
 - **🎯 Modern Practices**: Main branch initialization and organized sanitizer flags
 - **⚡ Better UX**: Clear success messages and next-step instructions

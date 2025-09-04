@@ -7,7 +7,7 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 ### 1. GTest Integration Failure
 **Problem**: Script generated CMakeLists.txt files that referenced `GTest::GTest` and `GTest::Main` targets even when GTest wasn't available, causing build failures.
 
-**Solution**: 
+**Solution**:
 - Added proper GTest detection with `find_package(GTest QUIET)`
 - Added graceful fallback when GTest is not found
 - Tests are only enabled when GTest is actually available
@@ -29,13 +29,14 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 - Improved error messages with clearer feedback
 - Added proper error handling with `/dev/null` redirection
 
-### 4. Non-Standard Header Usage
-**Problem**: Used `stdafx.hpp` which is Microsoft Visual Studio specific and not standard C++.
+### 4. Enhanced Precompiled Header Configuration
+**Problem**: Previous version used `stdafx.hpp` without proper CMake precompiled header configuration.
 
 **Solution**:
-- Replaced with `common.hpp` following standard C++ practices
-- Added common standard library includes
-- Improved header organization and documentation
+- Maintained `stdafx.hpp` for familiarity (recognized by Microsoft developers, harmless for others)
+- Added modern CMake precompiled header configuration using `target_precompile_headers()`
+- Implemented PCH reuse between library and executable targets for efficiency
+- Added CMake version check (3.16+) for PCH support with graceful fallback
 
 ## 🔧 Major Refactoring Improvements
 
@@ -77,6 +78,7 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 - Step-by-step instructions after project creation
 - Helpful examples in usage documentation
 - Better feedback during script execution
+- Modern CMake configuration with build status reporting
 
 ## 📚 Documentation Improvements
 
@@ -104,6 +106,8 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 6. ✅ Git initialization works properly
 7. ✅ Error handling for invalid inputs
 8. ✅ Script syntax validation
+9. ✅ Multi-platform package manager detection
+10. ✅ Precompiled header functionality
 
 ### Edge Cases Tested
 - Projects with special characters in names
@@ -111,6 +115,24 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 - Missing dependencies (GTest)
 - Different C++ standards (17, 20)
 - Various command-line option combinations
+- Different Linux distributions (Ubuntu, Fedora, Arch)
+- CMake versions with and without PCH support
+
+## 🎨 Design Decisions
+
+### Header File Choice: `stdafx.hpp`
+**Rationale**:
+- **Familiarity**: Developers from Microsoft ecosystem immediately recognize it as precompiled header
+- **Neutrality**: For other compilers, it's just a regular header file name with no special meaning
+- **Functionality**: We actually implement it as a precompiled header using modern CMake
+- **No conflicts**: Doesn't cause issues with GCC/Clang or other build systems
+
+### Multi-Platform Package Management
+**Approach**: Detect and use native package manager instead of forcing one standard
+**Benefits**:
+- **Native integration**: Uses system's preferred package manager
+- **Better reliability**: Package names and installation methods optimized per distribution
+- **Maintainability**: Easier to add support for new distributions
 
 ## 🎯 Benefits of Improvements
 
@@ -119,12 +141,16 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 - **Flexibility**: Support for different C++ standards and platforms
 - **Clarity**: Better error messages and success feedback
 - **Guidance**: Clear next steps after project creation
+- **Performance**: Faster compilation with precompiled headers
+- **Compatibility**: Works across different Linux distributions
 
 ### For Maintainers
 - **Readability**: Better organized and documented code
 - **Maintainability**: Modular functions and clear structure
 - **Extensibility**: Easy to add new features and options
 - **Standards**: Follows modern shell scripting best practices
+- **Cross-platform**: Multi-distribution package manager support
+- **Future-proof**: Modern CMake features with backward compatibility
 
 ## 📊 Script Statistics
 
@@ -135,12 +161,13 @@ This document summarizes the major improvements made to the `initcpp.sh` C++ pro
 - Error handling: Minimal
 - Documentation: Basic
 
-### After Improvements  
-- Lines of code: ~380+ (better organized)
-- Functions: 4 (usage, validate_project_name, install_deps, + main logic)
-- Platform support: Multiple Linux distributions
-- Error handling: Comprehensive
+### After Improvements
+- Lines of code: ~480+ (better organized with modern features)
+- Functions: 3 (usage, validate_project_name, install_deps)
+- Platform support: Multiple Linux distributions (apt-get, dnf, pacman)
+- Error handling: Comprehensive with validation
 - Documentation: Extensive with examples
+- Modern features: Precompiled headers, multi-platform package management
 
 ## 🚀 Future Improvement Opportunities
 
@@ -157,3 +184,12 @@ While the current improvements significantly enhance the script, potential futur
 ## ✨ Conclusion
 
 These improvements transform the script from a basic project generator into a robust, professional-grade tool that follows modern C++ and shell scripting best practices. The script now provides a much better user experience while being more maintainable and extensible for future enhancements.
+
+**Key achievements:**
+- ✅ **Cross-platform compatibility** across major Linux distributions
+- ✅ **Modern C++ features** with precompiled headers for faster builds
+- ✅ **Robust error handling** with comprehensive validation
+- ✅ **Professional build system** with sanitizers and proper CMake configuration
+- ✅ **Developer-friendly** approach balancing familiarity with modern best practices
+
+The decision to maintain `stdafx.hpp` while implementing it properly as a precompiled header exemplifies the script's philosophy: leverage familiar conventions while implementing them with modern tools and techniques.

@@ -14,19 +14,18 @@ env:
 
 jobs:
   build_clang:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - uses: actions/checkout@v3
 
     - name: Run code
       run: |
-        sudo apt install clang-15 clang-tidy-15 clang-format ninja-build libgtest-dev -y
-        export CC=$(which clang-15)
-        export CXX=$(which clang++-15)
+        sudo apt install clang-18 clang-tidy-18 clang-format ninja-build libgtest-dev -y
+        export CC=$(which clang-18)
+        export CXX=$(which clang++-18)
+        git config --global user.email "ci@github.com"
+        git config --global user.name "GitHub CI"
         chmod +x initcpp.sh
         sudo cp initcpp.sh /usr/local/bin/initcpp
         sudo initcpp -i
@@ -37,7 +36,7 @@ jobs:
         ninja
         ./testproj
         ctest
-        
+
   build_gcc:
     runs-on: ubuntu-latest
 
@@ -47,6 +46,8 @@ jobs:
     - name: Run code
       run: |
         sudo apt install ninja-build libgtest-dev -y
+        git config --global user.email "ci@github.com"
+        git config --global user.name "GitHub CI"
         chmod +x initcpp.sh
         sudo cp initcpp.sh /usr/local/bin/initcpp
         sudo initcpp -i

@@ -1,167 +1,148 @@
 #!/bin/bash
+# Enable strict variable handling and catch errors in pipelines.
+set -u
+set -o pipefail
 
-# C++ Project Initialization Script
-# This script creates a new C++ project with CMake, including sanitizers, tests, and modern C++ practices.
-
-# Exit on error by default, can be overridden with -f flag
-set -e
-
-# Function to display usage information
+# Function to display usage information.
 usage() {
-    echo "Usage: $0 [-h] [-p <PROJECT_PATH>] [-c <CXX_STANDARD>] [-i] [-f] [-d] [project_name]" 1>&2;
-    echo "Options:" 1>&2;
-    echo "    -h                   Display this help message." 1>&2;
-    echo "    -p <PROJECT_PATH>    Custom path for the project directory." 1>&2;
-    echo "    -c <CXX_STANDARD>    C++ standard version (default: 20)." 1>&2;
-    echo "    -i                   Install dependencies." 1>&2;
-    echo "    -f                   Force script to proceed even with errors." 1>&2;
-    echo "    -d                   Enable script debugging." 1>&2;
-    echo "    project_name         Name of the project to create." 1>&2;
-    echo "" 1>&2;
-    echo "Examples:" 1>&2;
-    echo "    $0 my_project                    # Create project with default settings" 1>&2;
-    echo "    $0 -c 17 my_project             # Create project with C++17 standard" 1>&2;
-    echo "    $0 -p /custom/path my_project   # Create project in custom directory" 1>&2;
-    exit 1;
+    cat <<EOF
+Usage: $0 [-h] [-i] [-f] [-d] [-p <project_directory>] [-c <C_STANDARD>] [-x <CXX_STANDARD>] <project_name>
+
+Options:
+  -h                    Display this help message.
+  -i                    Install dependencies.
+  -f                    Force script to proceed even if errors occur.
+  -d                    Enable debugging.
+  -p <project_directory>
+                        Specify the project directory (defaults to <project_name>).
+  -c <C_STANDARD>       Set the default C standard (default: 11).
+  -x <CXX_STANDARD>     Set the default C++ standard (default: 20).
+EOF
+    exit 1
 }
 
-# Function to validate project name
-validate_project_name() {
-    local project_name="$1"
-    
-    if [[ -z "${project_name}" ]]; then
-        echo "Error: Project name is required." >&2
-        return 1
-    fi
-
-    if [[ "${project_name}" == *" "* ]]; then
-        echo "Error: Project name cannot contain spaces." >&2
-        return 1
-    fi
-
-    # Check for invalid characters that might cause issues
-    if [[ "${project_name}" =~ [^a-zA-Z0-9._-] ]]; then
-        echo "Warning: Project name contains special characters that might cause issues." >&2
-        echo "Recommended to use only letters, numbers, dots, hyphens, and underscores." >&2
-    fi
-    
-    return 0
-}
-
+# Function to install dependencies.
 install_deps() {
-    echo "Installing dependencies..."
-    
-    # Detect package manager
-    if command -v apt-get &> /dev/null; then
-        echo "Using apt-get (Debian/Ubuntu)"
+    # Detect package manager and install dependencies accordingly
+    if command -v apt-get &>/dev/null; then
+        echo "Detected apt-get (Ubuntu/Debian)..."
+        # Update package list first
         sudo apt-get update
-        
-        # Install CMake
-        if ! command -v cmake &> /dev/null; then
+
+        # Install CMake if missing.
+        if ! command -v cmake &>/dev/null; then
             echo "Installing CMake..."
             sudo apt-get install -y cmake
         fi
 
-        # Install Git
-        if ! command -v git &> /dev/null; then
+        # Install Git if missing.
+        if ! command -v git &>/dev/null; then
             echo "Installing Git..."
             sudo apt-get install -y git
         fi
 
-        # Install Ninja
-        if ! command -v ninja &> /dev/null; then
+        # Install Ninja if missing.
+        if ! command -v ninja &>/dev/null; then
             echo "Installing Ninja..."
             sudo apt-get install -y ninja-build
         fi
 
-        # Install GTest
-        echo "Installing Google Test..."
+        # Install GoogleTest development files.
         sudo apt-get install -y libgtest-dev
-        
-    elif command -v dnf &> /dev/null; then
-        echo "Using dnf (Fedora/RHEL)"
-        
-        if ! command -v cmake &> /dev/null; then
+
+    elif command -v dnf &>/dev/null; then
+        echo "Detected dnf (Fedora/RHEL)..."
+
+        # Install CMake if missing.
+        if ! command -v cmake &>/dev/null; then
             echo "Installing CMake..."
             sudo dnf install -y cmake
         fi
 
-        if ! command -v git &> /dev/null; then
+        # Install Git if missing.
+        if ! command -v git &>/dev/null; then
             echo "Installing Git..."
             sudo dnf install -y git
         fi
 
-        if ! command -v ninja &> /dev/null; then
+        # Install Ninja if missing.
+        if ! command -v ninja &>/dev/null; then
             echo "Installing Ninja..."
             sudo dnf install -y ninja-build
         fi
 
-        echo "Installing Google Test..."
+        # Install GoogleTest development files.
         sudo dnf install -y gtest-devel
-        
-    elif command -v pacman &> /dev/null; then
-        echo "Using pacman (Arch Linux)"
-        
-        if ! command -v cmake &> /dev/null; then
+
+    elif command -v pacman &>/dev/null; then
+        echo "Detected pacman (Arch Linux)..."
+
+        # Update package database first
+        sudo pacman -Sy
+
+        # Install CMake if missing.
+        if ! command -v cmake &>/dev/null; then
             echo "Installing CMake..."
             sudo pacman -S --noconfirm cmake
         fi
 
-        if ! command -v git &> /dev/null; then
+        # Install Git if missing.
+        if ! command -v git &>/dev/null; then
             echo "Installing Git..."
             sudo pacman -S --noconfirm git
         fi
 
-        if ! command -v ninja &> /dev/null; then
+        # Install Ninja if missing.
+        if ! command -v ninja &>/dev/null; then
             echo "Installing Ninja..."
             sudo pacman -S --noconfirm ninja
         fi
 
-        echo "Installing Google Test..."
+        # Install GoogleTest development files.
         sudo pacman -S --noconfirm gtest
-        
+
     else
-        echo "Error: Unsupported package manager. Please install cmake, git, ninja, and gtest manually." >&2
+        echo "Warning: No supported package manager found (apt-get, dnf, pacman)."
+        echo "Please install the following packages manually:"
+        echo "- cmake"
+        echo "- git"
+        echo "- ninja-build (or ninja)"
+        echo "- gtest/libgtest-dev"
         exit 1
     fi
-    
-    echo "Dependencies installed successfully!"
 }
 
+# Default configuration.
 IGNORE_SCRIPT_ERRORS=0
 SCRIPT_DEBUG=0
 
-# Default values
-PROJECT_NAME=""
+# Default standards.
 DEFAULT_CXX_STD="20"
 DEFAULT_C_STD="11"
-PROJECT_DIR=""
 
 ENABLE_C_EXTENSIONS="ON"
 ENABLE_CXX_EXTENSIONS="ON"
 
+# Set default generator to Ninja (fallback to Unix Makefiles if Ninja is not available).
 GENERATOR="Ninja"
-
-# If Ninja is not installed, use Make
-if ! command -v ninja &> /dev/null; then
+if ! command -v ninja &>/dev/null; then
     GENERATOR="Unix Makefiles"
 fi
 
-# Parse command-line options
-while getopts ":hp:c:ifd" o; do
-    case "${o}" in
+PROJECT_DIR=""
+
+# Parse command-line options.
+while getopts ":hip:fdc:x:" opt; do
+    case "${opt}" in
         h)
             usage
-            ;;
-        p)
-            PROJECT_DIR=${OPTARG}
-            ;;
-        c)
-            DEFAULT_CXX_STD=${OPTARG}
             ;;
         i)
             install_deps
             exit 0
+            ;;
+        p)
+            PROJECT_DIR=${OPTARG}
             ;;
         f)
             IGNORE_SCRIPT_ERRORS=1
@@ -169,8 +150,14 @@ while getopts ":hp:c:ifd" o; do
         d)
             SCRIPT_DEBUG=1
             ;;
+        c)
+            DEFAULT_C_STD=${OPTARG}
+            ;;
+        x)
+            DEFAULT_CXX_STD=${OPTARG}
+            ;;
         \?)
-            echo "Invalid option: $OPTARG" >&2
+            echo "Invalid option: -$OPTARG" >&2
             usage
             ;;
         :)
@@ -179,63 +166,83 @@ while getopts ":hp:c:ifd" o; do
             ;;
     esac
 done
-shift $((OPTIND-1))
+shift $((OPTIND - 1))
 
-# Enable debugging
+# Enable debugging if requested.
 if [[ ${SCRIPT_DEBUG} -eq 1 ]]; then
     set -x
 fi
 
-# Set error handling based on flag
-if [[ ${IGNORE_SCRIPT_ERRORS} -eq 1 ]]; then
-    set +e  # Disable exit on error
-    echo "Warning: Error handling disabled. Script will continue on errors."
+# Exit on error unless we are forcing errors to be ignored.
+if [[ ${IGNORE_SCRIPT_ERRORS} -eq 0 ]]; then
+    set -e
 fi
 
-# If the path is provided as an argument
-if [[ -n "${1}" ]]; then
-    PROJECT_NAME="${1}"
+# Ensure a project name is provided.
+if [[ $# -lt 1 ]]; then
+    echo "Error: Project name is required." >&2
+    usage
 fi
 
-# Check if CMake is installed
-if ! command -v cmake &> /dev/null; then
-    echo "CMake is required to initialize a C++ project."
-    exit 1
-fi
+PROJECT_NAME="$1"
+shift
 
-# Check if Git is installed
-if ! command -v git &> /dev/null; then
-    echo "Git is required to initialize a C++ project."
-    exit 1
-fi
+# Function to validate project name.
+validate_project_name() {
+    local project_name="$1"
 
+    # Check if project name is empty
+    if [[ -z "$project_name" ]]; then
+        echo "Error: Project name cannot be empty." >&2
+        return 1
+    fi
+
+    # Check if project name contains spaces
+    if [[ "$project_name" =~ \  ]]; then
+        echo "Error: Project name cannot contain spaces." >&2
+        return 1
+    fi
+
+    # Check if project name contains invalid characters
+    if [[ ! "$project_name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "Error: Project name can only contain letters, numbers, underscores, and hyphens." >&2
+        return 1
+    fi
+
+    # Check if project name starts with a letter or underscore (good C++ practice)
+    if [[ ! "$project_name" =~ ^[a-zA-Z_] ]]; then
+        echo "Warning: Project name should start with a letter or underscore for better C++ compatibility." >&2
+    fi
+
+    return 0
+}
+
+# Validate the project name.
+validate_project_name "${PROJECT_NAME}" || exit 1
+
+# If no project directory was specified, default to the project name.
 if [[ -z "${PROJECT_DIR}" ]]; then
     PROJECT_DIR="${PROJECT_NAME}"
 fi
 
-# Validate project name
-if ! validate_project_name "${PROJECT_NAME}"; then
-    usage
+# Check if the project directory exists and is not empty.
+if [[ -d "${PROJECT_DIR}" ]]; then
+    if [[ -n "$(ls -A "${PROJECT_DIR}" 2>/dev/null)" ]]; then
+        echo "Error: Directory '${PROJECT_DIR}' is not empty." >&2
+        exit 1
+    fi
 fi
 
-# Check if directory exists and is not empty
-if [[ -d "${PROJECT_DIR}" ]] && [[ "$(ls -A "${PROJECT_DIR}" 2>/dev/null)" ]]; then
-    echo "Directory ${PROJECT_DIR} already exists and is not empty."
-    exit 1
-fi
-
-# Create project directory
+# Create the project directory structure.
 mkdir -p "${PROJECT_DIR}/include" "${PROJECT_DIR}/src" "${PROJECT_DIR}/build" "${PROJECT_DIR}/tests"
 
-# Initialize Git repository
-cd "${PROJECT_DIR}" || exit
-git init --initial-branch=main 2>/dev/null || git init  # Fallback for older git versions
-if [[ $(git branch --show-current 2>/dev/null) != "main" ]]; then
-    git branch -m main 2>/dev/null || true  # Rename to main if not already
-fi
+# Initialize a new Git repository.
+cd "${PROJECT_DIR}" || { echo "Failed to enter directory ${PROJECT_DIR}"; exit 1; }
+git init
 
-# Create .gitignore
-test -f .gitignore || cat <<EOF >.gitignore
+# Create .gitignore if it doesn't already exist.
+if [[ ! -f .gitignore ]]; then
+    cat <<'EOF' > .gitignore
 .vscode
 .cache
 .env
@@ -279,11 +286,12 @@ bin
 !.vscode/extensions.json
 
 build
-
 EOF
+fi
 
-# Create CMakeLists.txt
-test -f CMakeLists.txt || cat <<EOF >CMakeLists.txt
+# Create the main CMakeLists.txt if it does not exist.
+if [[ ! -f CMakeLists.txt ]]; then
+    cat <<EOF > CMakeLists.txt
 cmake_minimum_required(VERSION 3.12)
 project(${PROJECT_NAME} C CXX)
 
@@ -299,11 +307,11 @@ option(ENABLE_SANITIZERS "Enable sanitizers" ON)
 
 if (\${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     message(STATUS "Setting G++ flags")
-    add_compile_options(-Wall -Werror -Wextra -Wformat-security -Wconversion -Wsign-conversion  -Wno-gnu -Wno-gnu-statement-expression)
-elseif(\${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+    add_compile_options(-Wall -Werror -Wextra -Wformat-security -Wconversion -Wsign-conversion -Wno-gnu -Wno-gnu-statement-expression)
+elseif (\${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
     message(STATUS "Setting MSVC flags")
     add_compile_options(/W4 /WX)
-elseif(\${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+elseif (\${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     message(STATUS "Setting Clang flags")
     add_compile_options(-Werror -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-global-constructors -Wno-exit-time-destructors -Wno-weak-vtables -Wno-documentation -Wno-documentation-unknown-command)
 endif()
@@ -312,11 +320,9 @@ if(ENABLE_TESTS)
     include(CTest)
     enable_testing()
     find_package(GTest QUIET)
-
     if(GTest_FOUND)
         message(STATUS "GTest found, enabling tests")
         include(GoogleTest)
-        add_subdirectory(tests)
     else()
         message(WARNING "GTest not found, tests will be disabled. Install GTest to enable testing.")
         set(ENABLE_TESTS OFF)
@@ -350,21 +356,31 @@ if(ENABLE_SANITIZERS)
         -fsanitize=vptr
         -g
     )
-    
+
     add_compile_options(\${SANITIZER_FLAGS})
     add_link_options(\${SANITIZER_FLAGS})
 
-    if(\${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    if (\${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
         message(STATUS "Setting Clang-specific sanitizer flags")
         add_compile_options(-fsanitize=implicit-conversion -fsanitize=unsigned-integer-overflow)
         add_link_options(-fsanitize=implicit-conversion -fsanitize=unsigned-integer-overflow)
     endif()
 endif()
 
-# Add include directory
+# Add the include directory.
 include_directories(include)
 
-# Function to filter out excluded files
+# Enable precompiled headers if supported
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16")
+    # Modern CMake precompiled header support
+    set(PCH_HEADER "include/stdafx.hpp")
+    if(EXISTS "\${CMAKE_CURRENT_SOURCE_DIR}/\${PCH_HEADER}")
+        message(STATUS "Using precompiled header: \${PCH_HEADER}")
+        # We'll set this after creating the targets
+    endif()
+endif()
+
+# Function to filter out excluded files.
 function(filter_out excluded output)
     set(result "")
     foreach(file \${\${output}})
@@ -375,77 +391,79 @@ function(filter_out excluded output)
     set(\${output} "\${result}" PARENT_SCOPE)
 endfunction()
 
-# Add source files
+# Gather all source files.
 file(GLOB_RECURSE SOURCES "\${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-
-# Exclude specific files
 set(EXCLUDE_FILES "\${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 filter_out(EXCLUDE_FILES SOURCES)
 
 message(STATUS "Sources: \${SOURCES}")
 
 add_library(${PROJECT_NAME}_lib STATIC \${SOURCES})
-
-# Add executable
 add_executable(${PROJECT_NAME} "src/main.cpp")
 target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib)
 
-# Tests are only added if GTest is found (handled in ENABLE_TESTS section above)
-EOF
+# Set up precompiled headers if supported and available
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.16" AND EXISTS "\${CMAKE_CURRENT_SOURCE_DIR}/include/stdafx.hpp")
+    target_precompile_headers(${PROJECT_NAME}_lib PRIVATE "include/stdafx.hpp")
+    target_precompile_headers(${PROJECT_NAME} REUSE_FROM ${PROJECT_NAME}_lib)
+    message(STATUS "Precompiled headers enabled for faster compilation")
+endif()
 
-test -f tests/CMakeLists.txt || cat <<EOF >tests/CMakeLists.txt
+if(ENABLE_TESTS AND GTest_FOUND)
+    add_subdirectory(tests)
+endif()
+EOF
+fi
+
+# Create tests/CMakeLists.txt if it doesn't exist.
+if [[ ! -f tests/CMakeLists.txt ]]; then
+    cat <<EOF > tests/CMakeLists.txt
 add_executable(${PROJECT_NAME}_tests test.cpp)
 target_link_libraries(${PROJECT_NAME}_tests ${PROJECT_NAME}_lib GTest::GTest GTest::Main)
 gtest_discover_tests(${PROJECT_NAME}_tests)
 EOF
+fi
 
-# Create common.hpp
-test -f include/common.hpp || cat <<EOF >include/common.hpp
+# Create sample header and source files if they do not exist.
+if [[ ! -f include/stdafx.hpp ]]; then
+    cat <<EOF > include/stdafx.hpp
 #pragma once
-
-// Common standard library includes
 #include <iostream>
-#include <string>
-#include <vector>
-#include <memory>
-
-// Add your project-specific common includes here
-
 EOF
+fi
 
-# Create main.cpp
-test -f src/main.cpp || cat <<EOF >src/main.cpp
-#include "common.hpp"
+if [[ ! -f src/main.cpp ]]; then
+    cat <<EOF > src/main.cpp
+#include "stdafx.hpp"
 
 int main() {
     std::cout << "Hello, World!" << std::endl;
     return 0;
 }
 EOF
+fi
 
-# Create lib.cpp
-test -f src/lib.cpp || cat <<EOF >src/lib.cpp
-#include "common.hpp"
+if [[ ! -f src/lib.cpp ]]; then
+    cat <<EOF > src/lib.cpp
+#include "stdafx.hpp"
 
-// Add your library implementation here
-
+// Library implementation.
 EOF
+fi
 
-# Create test.cpp
-test -f tests/test.cpp || cat <<EOF >tests/test.cpp
+if [[ ! -f tests/test.cpp ]]; then
+    cat <<EOF > tests/test.cpp
 #include <gtest/gtest.h>
 
-TEST(SampleTest, Test1) {
+TEST(SampleTest, BasicTest) {
     EXPECT_EQ(1, 1);
 }
 EOF
+fi
 
-# Configure git identity for the initial commit (placeholder values for CI environments)
-git config user.email "initcpp@example.com"
-git config user.name "InitCpp Script"
-
+# Stage and (optionally) commit the initial files.
 git add .
-git commit -m "Initial project setup with CMake and modern C++ configuration"
+git commit -m "Initial project structure" || true
 
 echo ""
 echo "✅ Project '${PROJECT_NAME}' initialized successfully!"
@@ -457,20 +475,20 @@ echo "Next steps:"
 echo "  1. cd ${PROJECT_DIR}"
 echo "  2. cmake --build build        # Build the project"
 echo "  3. ./build/${PROJECT_NAME}    # Run the executable"
+if command -v ctest &>/dev/null && [[ -d "tests" ]]; then
+echo "  4. cd build && ctest          # Run tests (if available)"
+fi
 echo ""
 
-# Configure the build
+# Configure the project with CMake.
 pushd build > /dev/null
-echo "Configuring build system..."
+echo "Configuring build system with ${GENERATOR}..."
 if cmake .. "-G${GENERATOR}"; then
     echo "✅ Build configuration successful!"
     echo ""
-    echo "To build and run your project:"
-    echo "  cd ${PROJECT_DIR}"
-    echo "  cmake --build build"
-    echo "  ./build/${PROJECT_NAME}"
+    echo "Ready to build! Run 'cmake --build build' to compile your project."
 else
-    echo "❌ Build configuration failed. You can manually run 'cmake --build build' later."
+    echo "❌ Build configuration failed. Please check the error messages above."
     exit 1
 fi
 popd > /dev/null
