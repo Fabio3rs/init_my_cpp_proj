@@ -1,159 +1,185 @@
 # Init my C++ project with CMake
 
-This Bash script is designed to simplify the process of initializing C++ projects by creating a project directory structure, setting up necessary files like CMakeLists.txt, and installing dependencies with the configurations I prefer in my projects.
+A Bash script that creates a C++ project with the CMake configuration I use in my projects. It generates source files, a static library, an executable, and sample tests, initializes a Git repository, and configures the build directory.
 
-### Motivation
-When starting a new C++ project, certain tasks are repetitive and time-consuming, such as creating directory structures, setting up build systems, and installing dependencies. This can be frustrating, especially when working on multiple projects. To streamline this process, I have created a script that automates the setup tasks, allowing developers to focus more on writing code and less on project setup.
+## Motivation
 
-As someone who regularly studies C++ and creates new projects, I understand the importance of being able to focus on the code rather than the project structure. That is why I created this script to automate the process of creating a new project.
+I regularly create projects while studying C++. This script automates repetitive setup so I can spend more time writing code.
 
-### Features
-- **🏗️ Automated Project Setup**: Create complete C++ project directory structure
-- **⚙️ Modern CMake Configuration**: Generate optimized CMakeLists.txt with best practices
-- **⚡ Precompiled Headers**: Automatic PCH setup for faster compilation (CMake 3.16+)
-- **🛡️ Security & Quality**: Enable sanitizers and comprehensive warning flags by default
-- **✅ Testing Ready**: Automatic GTest integration when available
-- **🔧 Configurable**: Support for different C++ standards and custom project paths
-- **🌐 Cross-Platform**: Support for multiple Linux package managers (apt, dnf, pacman)
-- **📋 Modern Git Integration**: Initialize with main branch and proper .gitignore
+## Features
 
-Enabling sanitizers and warning flags in C++ offers significant benefits. Sanitizers detect common errors reducing security vulnerabilities. Warning flags promote best practices and code quality. By incorporating these tools, developers can enhance the security, reliability, and maintainability of their C++ codebases.
-Since sanitizers run at runtime, it is essential to have automated tests in the codebase.
+- Configurable C and C++ standards (C11 and C++20 by default).
+- Compiler warnings with warnings treated as errors.
+- Optional runtime sanitizers, enabled by default when configuring a fresh Debug build.
+- Precompiled headers with CMake 3.16 or newer.
+- GoogleTest integration and automatic test discovery when GoogleTest is available.
+- Ninja builds, with Unix Makefiles as a fallback.
+- Git initialization, a generated `.gitignore`, and an attempted initial commit.
+- Dependency installation through `apt-get`, `dnf`, or `pacman`.
 
-### Disclaimer
-This Bash script is provided as-is, without any warranty or guarantee of its suitability for any particular purpose. While the script aims to automate the setup process for C++ projects, it may not cover all possible scenarios or configurations.
+## Requirements
 
-Users are advised to review and understand the script's functionality before running it, and to use it at their own risk. The author and contributors of this script shall not be held responsible for any damages or issues that arise from the use of this script.
+- Linux with Bash.
+- Git.
+- CMake 3.12 or newer. Sanitizers require at least 3.13; precompiled headers require at least 3.16. The selected language standard may require a newer CMake version.
+- C and C++ compilers, such as GCC or Clang, supporting the selected standards (C11 and C++20 by default).
+- Ninja or Make.
+- Optional: GoogleTest development files for unit tests.
+- For `-i`: a supported package manager and permission to install packages through `sudo`.
 
-By using this script, you agree to indemnify and hold harmless the author and contributors from any liability, damage, or loss arising from its use.
+The generated CMake configuration includes MSVC warning flags, but the script targets Linux and its sanitizer flags are intended for GCC and Clang.
 
-### Installation of the script
+## Installation
 
-#### System Requirements
-- **Linux Distribution**: Ubuntu/Debian, Fedora/RHEL, or Arch Linux
-- **CMake**: Version 3.12+ (3.16+ recommended for precompiled headers)
-- **Compiler**: GCC, Clang, or MSVC with C++11+ support
-- **Build System**: Ninja (preferred) or Make
-- **Optional**: GTest for unit testing
+Clone the repository:
 
-#### Installation Steps
-1. Clone the repository
 ```bash
 git clone https://github.com/Fabio3rs/init_my_cpp_proj.git
-```
-
-2. Change the directory to the repository
-```bash
 cd init_my_cpp_proj
 ```
 
-3. Make the script executable
+Install for your user:
+
 ```bash
-chmod +x initcpp.sh
+mkdir -p "$HOME/.local/bin"
+install -m 755 initcpp.sh "$HOME/.local/bin/initcpp"
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
-4. Add the script to the PATH
-```bash
-sudo cp initcpp.sh /usr/local/bin/initcpp
-```
-OR
-```bash
-cp initcpp.sh ~/.local/bin/initcpp
-```
+If `~/.local/bin` is not already on your `PATH`, add the `export` line to your shell startup file (for example, `~/.bashrc`).
 
-### Usage
-Create a new C++ project with the project name as an argument:
+Alternatively, install system-wide:
 
 ```bash
-initcpp <project-name>
+sudo install -m 755 initcpp.sh /usr/local/bin/initcpp
 ```
 
-#### Command Line Options
-
-- `-h`: Display help message with usage examples
-- `-c <standard>`: Set C standard version (11, 99, etc.) - default is 11
-- `-x <standard>`: Set C++ standard version (11, 14, 17, 20, 23) - default is 20
-- `-p <path>`: Custom directory path for the project
-- `-i`: Install required dependencies (cmake, git, ninja, gtest) for your distribution
-- `-f`: Force script to continue even on errors
-- `-d`: Enable debug mode with verbose output
-
-#### Examples
+You can also run the script directly without installing it:
 
 ```bash
-# Create project with default settings (C++20)
-initcpp my_awesome_project
+bash initcpp.sh my_project
+```
 
-# Create project with C++17 standard
+### Installing dependencies
+
+```bash
+initcpp -i
+```
+
+This installs missing CMake, Git, and Ninja commands, plus the GoogleTest development package, using the first supported package manager found (`apt-get`, `dnf`, or `pacman`). It exits after installation without creating a project. Install your C and C++ compilers separately; `-i` does not install them.
+
+## Usage
+
+```bash
+initcpp [options] <project_name>
+```
+
+Place options before the project name. Names may contain letters, numbers, underscores, and hyphens, but no spaces. Starting with a letter or underscore is recommended.
+
+The destination must be absent or an empty directory. By default, it is named after the project in the current directory. With `-p`, the supplied path is the exact destination; the project name is not appended.
+
+### Command-line options
+
+| Option | Description |
+| --- | --- |
+| `-h` | Display usage information. Currently exits with status 1. |
+| `-c <standard>` | Set the C standard (default: `11`). |
+| `-x <standard>` | Set the C++ standard (default: `20`). |
+| `-p <path>` | Set the project directory (default: `<project_name>`). |
+| `-i` | Install dependencies and exit. No project name is required. |
+| `-f` | Continue after some command failures. Explicit validation and CMake configuration failures still stop the script. |
+| `-d` | Enable Bash command tracing for project creation. |
+
+### Examples
+
+```bash
+# Create a project using C++20
+initcpp my_project
+
+# Use C++17
 initcpp -x 17 legacy_project
 
-# Create project in custom directory
-initcpp -p /home/user/projects/my_project awesome_project
+# Create ~/projects/my_project with an executable named awesome_project
+initcpp -p "$HOME/projects/my_project" awesome_project
 
-# Install dependencies first (auto-detects your distro)
-initcpp -i
-
-# Create project with debug output (useful for troubleshooting)
+# Show executed commands
 initcpp -d debug_project
 
-# Create project with custom C standard and directory
-initcpp -c 11 -x 23 -p ~/dev/modern_project future_project
+# Select both language standards and a destination
+initcpp -c 11 -x 23 -p "$HOME/dev/modern_project" future_project
 ```
 
-**Note**: Use `-x` for C++ standard and `-c` for C standard. Most users only need `-x`.
+Use `-x` to select the C++ standard; `-c` only changes the C standard. The `-d` option enables script tracing, not a CMake Debug build.
 
-#### Project Structure
+### Generated project structure
 
-The script creates the following structure:
-```
+```text
 my_project/
-├── CMakeLists.txt          # Main build configuration with PCH support
-├── .gitignore              # Git ignore patterns
+├── .git/
+├── .gitignore
+├── CMakeLists.txt
 ├── include/
-│   └── stdafx.hpp          # Precompiled header (faster compilation)
+│   └── stdafx.hpp         # Precompiled header
 ├── src/
-│   ├── main.cpp           # Application entry point
-│   └── lib.cpp            # Library implementation
+│   ├── main.cpp           # Hello, World! executable
+│   └── lib.cpp            # Static library placeholder
 ├── tests/
-│   ├── CMakeLists.txt     # Test configuration
-│   └── test.cpp           # Sample tests (if GTest available)
-└── build/                 # Build directory (auto-configured)
+│   ├── CMakeLists.txt
+│   └── test.cpp           # Sample GoogleTest test
+└── build/                 # Configured by the script
 ```
 
-### Building Your Project
+Test files are always generated. If CMake cannot find GoogleTest, test targets are disabled. The initial Git branch follows your Git configuration. If Git cannot create the initial commit (for example, because your name or email is unset), the script continues with the files staged.
 
-After creating your project, you can immediately build and run it:
+## Building and running
+
+After the script successfully configures the project:
 
 ```bash
-# Navigate to your project
 cd my_project
-
-# Build the project (uses Ninja if available, otherwise Make)
 cmake --build build
-
-# Run the executable
 ./build/my_project
 
-# Run tests (if GTest is available)
-cd build && ctest
+# Run tests if GoogleTest was found
+(cd build && ctest --output-on-failure)
 ```
 
-The generated CMakeLists.txt includes:
-- **Modern C++ standards** (C++20 by default)
-- **Comprehensive compiler warnings** for better code quality
-- **Sanitizers** for runtime error detection (Debug builds)
-- **Precompiled headers** for faster compilation
-- **Automatic test discovery** with GTest integration
+The script selects Ninja if it is available when the script starts; otherwise, it selects Unix Makefiles. It configures the project but does not compile it or run tests.
 
-### What's New
+### Debug builds and sanitizers
 
-Recent improvements include:
-- **⚡ Precompiled Headers**: Modern CMake PCH configuration for faster compilation
-- **🔧 Enhanced CLI**: Better command-line parsing with C++ standard selection
-- **🛠️ Cross-Platform**: Support for multiple Linux distributions (Ubuntu/Debian, Fedora/RHEL, Arch Linux)
-- **🏗️ Robust Build**: Improved CMake configuration with better error handling
-- **📚 Better Documentation**: Comprehensive README with examples and project structure
-- **🧪 Smart Testing**: Automatic GTest detection with graceful fallback
-- **✅ Project Validation**: Enhanced project name validation with helpful warnings
-- **🎯 Modern Practices**: Main branch initialization and organized sanitizer flags
-- **⚡ Better UX**: Clear success messages and next-step instructions
+The initial configuration does not set `CMAKE_BUILD_TYPE`, so sanitizers are off by default. To enable them in the existing build directory, set both options explicitly:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DENABLE_SANITIZERS=ON
+cmake --build build
+./build/my_project
+(cd build && ctest --output-on-failure)
+```
+
+`ENABLE_SANITIZERS` is cached by CMake. Changing only the build type after the initial configuration does not change its cached value. Sanitizers help detect errors at runtime, so run your executable and tests to benefit from them.
+
+To configure a Release build without sanitizers:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_SANITIZERS=OFF
+cmake --build build
+```
+
+The `cmake -S . -B build` examples require CMake 3.13 or newer. With CMake 3.12, configure from inside `build` using `cmake ..` and the desired options, with sanitizers disabled.
+
+### Tests and source files
+
+To disable test targets explicitly:
+
+```bash
+cmake -S . -B build -DENABLE_TESTS=OFF
+```
+
+After installing GoogleTest, reconfigure with `-DENABLE_TESTS=ON` and rebuild to enable the sample test.
+
+The generated configuration collects library sources from `src/*.cpp` recursively, excluding `src/main.cpp`. Rerun CMake after adding or removing source files so the build includes the changes.
+
+## License
+
+This project is distributed under the [MIT License](LICENSE), without warranty. Review the script before running it, especially its dependency installation commands.
